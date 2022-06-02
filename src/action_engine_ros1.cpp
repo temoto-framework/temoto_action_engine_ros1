@@ -21,6 +21,7 @@
 #include "temoto_action_engine/messaging.h"
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <fstream>
 #include <sstream>
 
@@ -32,6 +33,13 @@ ActionEngineRos1::ActionEngineRos1()
 
 void ActionEngineRos1::initialize()
 {
+  TEMOTO_PRINT("Wake words that this Action Engine Node responds to:");
+  for (const auto& ww : wake_words_)
+  {
+    std::cout << " * " << ww << std::endl;
+  }
+  std::cout << std::endl;
+
   // Set up the UMRF graph subscriber to a globally namespaced topic
   start_umrf_graph_sub_ = nh_.subscribe("/broadcast_start_umrf_graph", 1, &ActionEngineRos1::broadcastStartUmrfGraphCallback, this);
   stop_umrf_graph_sub_ = nh_.subscribe("/broadcast_stop_umrf_graph", 1, &ActionEngineRos1::broadcastStopUmrfGraphCallback, this);
@@ -70,6 +78,12 @@ void ActionEngineRos1::initialize()
     throw CREATE_TEMOTO_ERROR("None of the indicated directories contained TeMoto actions, exiting.");
   }
 
+  // Set the actor synchronization action path (optional)
+  if (!actor_synchronizer_umrf.getName().empty())
+  {
+    ae_.setActorSynchronizerUmrf(actor_synchronizer_umrf);
+  }
+
   // Start the action engine
   ae_.start();
 }
@@ -82,20 +96,11 @@ void ActionEngineRos1::parseCmdArguments(int argc, char** argv)
   desc.add_options()
     ("wake-word", po::value<std::string>(), "Required. Main wake word.")
     ("actions-path", po::value<std::string>(), "Required. Action packages root path")
-    ("extra-wake-words", po::value<std::string>(), "Optional. Additional wake words. Indicates to which wake words the action engine will respond to.");
+    ("extra-wake-words", po::value<std::string>(), "Optional. Additional wake words. Indicates to which wake words the action engine will respond to.")
+    ("actor-synchronizer-path", po::value<std::string>(), "Optional. Multi actor synchronizer action path");
 
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
-
-  /*
-   * Get the wake words
-   */ 
-  if (vm.count("extra-wake-words"))
-  {
-    std::string wake_words_str = vm["extra-wake-words"].as<std::string>();
-    boost::replace_all(wake_words_str, " ", "");
-    boost::split(wake_words_, wake_words_str, boost::is_any_of(","));
-  }
 
   /*
    * Get the main wake word
@@ -104,13 +109,6 @@ void ActionEngineRos1::parseCmdArguments(int argc, char** argv)
   {
     std::string main_wake_word = vm["wake-word"].as<std::string>();
     wake_words_.push_back(main_wake_word);
-
-    TEMOTO_PRINT("Wake words that this Action Engine Node responds to:");
-    for (const auto& ww : wake_words_)
-    {
-      std::cout << " * " << ww << std::endl;
-    }
-    std::cout << std::endl;
   }
   else
   {
@@ -131,6 +129,39 @@ void ActionEngineRos1::parseCmdArguments(int argc, char** argv)
     std::stringstream ss;
     ss << "Missing action packages path file\n" << desc;
     throw CREATE_TEMOTO_ERROR(ss.str());
+  }
+
+  /*
+   * Get the extra wake words
+   */ 
+  if (vm.count("extra-wake-words"))
+  {
+    std::vector<std::string> additional_wake_words;
+    std::string wake_words_str = vm["extra-wake-words"].as<std::string>();
+    boost::replace_all(wake_words_str, " ", "");
+    boost::split(additional_wake_words, wake_words_str, boost::is_any_of(","));
+    wake_words_.insert(wake_words_.end(), additional_wake_words.begin(), additional_wake_words.end());
+  }
+
+  /*
+   * Get the multi actor action synchronizer path
+   */ 
+  if (vm.count("actor-synchronizer-path"))
+  {
+    std::string actor_synchronizer_path = vm["actor-synchronizer-path"].as<std::string>();
+    if (!boost::filesystem::exists(actor_synchronizer_path))
+    {
+      throw CREATE_TEMOTO_ERROR("Actor synchronizer path is broken.");
+    }
+
+    // Get the actor synchronizer UMRF
+    std::ifstream ifs(actor_synchronizer_path + "/umrf.json");
+    std::string actor_synchronizer_umrf_json_str;
+    actor_synchronizer_umrf_json_str.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+    actor_synchronizer_umrf = umrf_json_converter::fromUmrfJsonStr(actor_synchronizer_umrf_json_str, true);
+    actor_synchronizer_umrf.setActor(wake_words_.at(0));
+    actor_synchronizer_umrf.setLibraryPath(actor_synchronizer_path 
+      + "/lib/lib" + actor_synchronizer_umrf.getPackageName() + ".so");
   }
 }
 

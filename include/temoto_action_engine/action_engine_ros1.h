@@ -89,7 +89,8 @@ private:
 
   // Action Engine setup parameters
   std::vector<std::string> action_paths_;
-  std::vector<std::string> wake_words_; 
+  std::vector<std::string> wake_words_;
+  UmrfNode actor_synchronizer_umrf;
 };
 } // temoto_action_engine namespace
 
