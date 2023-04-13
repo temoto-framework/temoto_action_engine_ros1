@@ -14,7 +14,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  ros::init(argc, argv, "temoto_parser_node");
+  ros::init(argc, argv, "umrf_graph_publisher");
   ros::NodeHandle nh;
   ros::Publisher umrf_graph_pub = nh.advertise<temoto_action_engine::BroadcastStartUmrfGraph>("/broadcast_start_umrf_graph", 1);
   ros::AsyncSpinner spinner(0);

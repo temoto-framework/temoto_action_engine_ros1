@@ -85,23 +85,23 @@ install(TARGETS action_engine_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-# Parser node
-add_executable(parser_node
-  src/parser_node.cpp
+# UMRF graph publisher
+add_executable(umrf_graph_publisher
+  src/umrf_graph_publisher.cpp
 )
 
-add_dependencies(parser_node
+add_dependencies(umrf_graph_publisher
   ${catkin_EXPORTED_TARGETS}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   temoto_action_engine_000
 )
 
-target_link_libraries(parser_node
+target_link_libraries(umrf_graph_publisher
   ${catkin_LIBRARIES}
   ${libraries}
 )
 
-install(TARGETS parser_node
+install(TARGETS umrf_graph_publisher
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
