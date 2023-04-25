@@ -75,7 +75,7 @@ void ActionEngineRos1::initialize()
 
   if (successful_paths == 0)
   {
-    throw CREATE_TEMOTO_ERROR("None of the indicated directories contained TeMoto actions, exiting.");
+    TEMOTO_PRINT("Action Engine was unable to locate any TeMoto actions");
   }
 
   // Set the actor synchronization action path (optional)
