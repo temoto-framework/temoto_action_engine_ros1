@@ -126,7 +126,10 @@ install(TARGETS graph_modifier_node
 )
 
 # Install other stuff
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/temoto_action_engine/include/temoto_action_engine/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/temoto_action_engine/rapidjson/include/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 
 install(DIRECTORY include/${PROJECT_NAME}/
